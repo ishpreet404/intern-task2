@@ -41,12 +41,20 @@ class GameScene extends Phaser.Scene {
 
     // Game over and start screens
     this.gameOverText = this.add.text(GAME_WIDTH/2, 220, '', { fontSize: '64px', fill: '#ff4444', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
-    this.startText = this.add.text(GAME_WIDTH/2, 320, 'Press SPACE to Start', { fontSize: '36px', fill: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    this.startText = this.add.text(GAME_WIDTH/2, 320, 'Press SPACE or Tap Start', { fontSize: '36px', fill: '#fff', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
     this.instructionsText = this.add.text(GAME_WIDTH/2, 400, 'Arrow Keys: Move   |   Space: Shoot', { fontSize: '24px', fill: '#fff', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5);
 
+    // Start button for mobile/touch
+    this.startBtn = this.add.rectangle(GAME_WIDTH/2, 380, 180, 60, 0x2ecc40, 0.85).setOrigin(0.5).setInteractive();
+    this.startBtnText = this.add.text(GAME_WIDTH/2, 380, 'START', { fontSize: '32px', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    this.startBtn.on('pointerdown', () => {
+      if (!this.isGameStarted) this.startGamePlay();
+    });
     // Hide game UI until game starts
     this.scoreText.setVisible(false);
     this.livesText.setVisible(false);
+    this.startBtn.setVisible(true);
+    this.startBtnText.setVisible(true);
 
     // Game state
     this.isGameStarted = false;
@@ -76,26 +84,40 @@ class GameScene extends Phaser.Scene {
     // Only show on mobile
     if (!this.sys.game.device.os.android && !this.sys.game.device.os.iOS) return;
 
+    // Overlay for better touch visibility
+    this.touchOverlay = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT-60, GAME_WIDTH, 120, 0x000000, 0.15).setScrollFactor(0);
+
     // Left button
-    this.leftBtn = this.add.circle(70, GAME_HEIGHT-70, 40, 0x333333, 0.5).setScrollFactor(0).setInteractive();
+    this.leftBtn = this.add.circle(70, GAME_HEIGHT-70, 40, 0x333333, 0.7).setScrollFactor(0).setInteractive();
     this.leftBtnText = this.add.text(70, GAME_HEIGHT-70, '<', { fontSize: '36px', fill: '#fff' }).setOrigin(0.5);
     this.leftBtn.on('pointerdown', () => { this.leftDown = true; });
     this.leftBtn.on('pointerup', () => { this.leftDown = false; });
     this.leftBtn.on('pointerout', () => { this.leftDown = false; });
+    this.leftBtn.on('pointercancel', () => { this.leftDown = false; });
 
     // Right button
-    this.rightBtn = this.add.circle(170, GAME_HEIGHT-70, 40, 0x333333, 0.5).setScrollFactor(0).setInteractive();
+    this.rightBtn = this.add.circle(170, GAME_HEIGHT-70, 40, 0x333333, 0.7).setScrollFactor(0).setInteractive();
     this.rightBtnText = this.add.text(170, GAME_HEIGHT-70, '>', { fontSize: '36px', fill: '#fff' }).setOrigin(0.5);
     this.rightBtn.on('pointerdown', () => { this.rightDown = true; });
     this.rightBtn.on('pointerup', () => { this.rightDown = false; });
     this.rightBtn.on('pointerout', () => { this.rightDown = false; });
+    this.rightBtn.on('pointercancel', () => { this.rightDown = false; });
 
     // Shoot button
-    this.shootBtn = this.add.circle(GAME_WIDTH-70, GAME_HEIGHT-70, 40, 0x333333, 0.5).setScrollFactor(0).setInteractive();
+    this.shootBtn = this.add.circle(GAME_WIDTH-70, GAME_HEIGHT-70, 40, 0x2ecc40, 0.7).setScrollFactor(0).setInteractive();
     this.shootBtnText = this.add.text(GAME_WIDTH-70, GAME_HEIGHT-70, '●', { fontSize: '36px', fill: '#fff' }).setOrigin(0.5);
     this.shootBtn.on('pointerdown', () => { this.shootDown = true; });
     this.shootBtn.on('pointerup', () => { this.shootDown = false; });
     this.shootBtn.on('pointerout', () => { this.shootDown = false; });
+    this.shootBtn.on('pointercancel', () => { this.shootDown = false; });
+
+    // Jump button (optional, for platformers)
+    // this.jumpBtn = this.add.circle(GAME_WIDTH-170, GAME_HEIGHT-70, 40, 0x3498db, 0.7).setScrollFactor(0).setInteractive();
+    // this.jumpBtnText = this.add.text(GAME_WIDTH-170, GAME_HEIGHT-70, '↑', { fontSize: '36px', fill: '#fff' }).setOrigin(0.5);
+    // this.jumpBtn.on('pointerdown', () => { this.jumpDown = true; });
+    // this.jumpBtn.on('pointerup', () => { this.jumpDown = false; });
+    // this.jumpBtn.on('pointerout', () => { this.jumpDown = false; });
+    // this.jumpBtn.on('pointercancel', () => { this.jumpDown = false; });
   }
 
   update() {
@@ -104,7 +126,17 @@ class GameScene extends Phaser.Scene {
       if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
         this.startGamePlay();
       }
+      // Show start button only if not started
+      if (this.startBtn) {
+        this.startBtn.setVisible(true);
+        this.startBtnText.setVisible(true);
+      }
       return;
+    } else {
+      if (this.startBtn) {
+        this.startBtn.setVisible(false);
+        this.startBtnText.setVisible(false);
+      }
     }
 
     // Game over logic
@@ -170,6 +202,10 @@ class GameScene extends Phaser.Scene {
     this.gameOverText.setText('');
     this.startText.setVisible(false);
     this.instructionsText.setVisible(false);
+    if (this.startBtn) {
+      this.startBtn.setVisible(false);
+      this.startBtnText.setVisible(false);
+    }
 
     // Create player (if not already created)
     if (!this.player) {
